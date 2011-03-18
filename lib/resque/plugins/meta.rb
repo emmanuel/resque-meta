@@ -32,6 +32,8 @@ module Resque
     #     meta1.enqueued_at # => 'Wed May 19 13:42:41 -0600 2010'
     #     meta1['foo'] # => 'bar'
     module Meta
+      # drop this extend and allow users to opt-in for timestamps
+      extend Timestamps
 
       # Override in your job to control the metadata id. It is
       # passed the same arguments as `perform`, that is, your job's
@@ -63,23 +65,6 @@ module Resque
       module_function :get_meta
       public :get_meta
 
-      def before_perform_meta(meta_id, *args)
-        if meta = get_meta(meta_id)
-          meta.start!
-        end
-      end
-
-      def after_perform_meta(meta_id, *args)
-        if meta = get_meta(meta_id)
-          meta.finish!
-        end
-      end
-
-      def on_failure_meta(e, meta_id, *args)
-        if meta = get_meta(meta_id)
-          meta.fail!
-        end
-      end
     end
   end
 end
