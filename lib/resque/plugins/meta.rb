@@ -51,33 +51,14 @@ module Resque
       # The meta_id in the returned object can be used to fetch the
       # metadata again in the future.
       def enqueue(*args)
-        meta = Metadata.new({'meta_id' => meta_id(args), 'job_class' => self.to_s})
+        meta = Metadata.new('meta_id' => meta_id(args), 'job_class' => self.to_s)
         meta.save
         Resque.enqueue(self, meta.meta_id, *args)
         meta
       end
 
-      def store_meta(meta)
-        key = "meta:#{meta.meta_id}"
-        json = Resque.encode(meta.data)
-        Resque.redis.set(key, json)
-        Resque.redis.expireat("resque:#{key}", meta.expire_at) if meta.expire_at > 0
-        meta
-      end
-
-      # Retrieve the metadata for a given job.  If you call this
-      # from a class that extends Meta, then the metadata will
-      # only be returned if the metadata for that id is for the
-      # same class.  Explicitly, calling Meta.get_meta(some_id)
-      # will return the metadata for a job of any type.
       def get_meta(meta_id)
-        key = "meta:#{meta_id}"
-        if json = Resque.redis.get(key)
-          data = Resque.decode(json)
-          if self == Meta || self.to_s == data['job_class']
-            Metadata.new(data)
-          end
-        end
+        Metadata.get(meta_id, self)
       end
       module_function :get_meta
       public :get_meta
