@@ -15,7 +15,7 @@ module Resque
         # Retrieve the metadata for a given job.  If you call this
         # from a class that extends Meta, then the metadata will
         # only be returned if the metadata for that id is for the
-        # same class.  Explicitly, calling Metadata.get(some_id)
+        # same class.  Explicitly calling Metadata.get(some_id)
         # will return the metadata for a job of any type.
         def self.get(meta_id, job_class = nil)
           key = "meta:#{meta_id}"
@@ -43,8 +43,8 @@ module Resque
 
         # Reload the metadata from the store
         def reload!
-          if new_meta = self.class.get(meta_id, job_class)
-            @data = new_meta.data
+          if loaded = self.class.get(meta_id, job_class)
+            @data = loaded.data
           end
           self
         end
