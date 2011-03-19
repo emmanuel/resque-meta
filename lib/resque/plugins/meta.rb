@@ -2,6 +2,7 @@ require 'digest/sha1'
 require 'resque'
 require 'resque/plugins/meta/version'
 require 'resque/plugins/meta/metadata'
+require 'resque/plugins/timestamps'
 
 module Resque
   module Plugins
