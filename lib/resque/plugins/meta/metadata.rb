@@ -45,7 +45,7 @@ module Resque
 
         # Reload the metadata from the store
         def reload!
-          if new_meta = self.class.get(meta_id, job_class.to_s)
+          if new_meta = self.class.get(meta_id, job_class)
             @data = new_meta.data
           end
           self
