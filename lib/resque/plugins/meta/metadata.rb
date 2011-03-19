@@ -6,12 +6,10 @@ module Resque
       class Metadata
         attr_reader :job_class, :meta_id, :data, :enqueued_at, :expire_in
 
-        def self.store(meta)
-          key = "meta:#{meta.meta_id}"
-          json = Resque.encode(meta.data)
-          Resque.redis.set(key, json)
-          Resque.redis.expireat("resque:#{key}", meta.expire_at) if meta.expire_at > 0
-          meta
+        def self.store(meta_id, data, expire_at)
+          key = "meta:#{meta_id}"
+          Resque.redis.set(key, Resque.encode(data))
+          Resque.redis.expireat("resque:#{key}", expire_at) if expire_at > 0
         end
 
         # Retrieve the metadata for a given job.  If you call this
@@ -53,7 +51,7 @@ module Resque
 
         # Save the metadata. returns self
         def save
-          self.class.store(self)
+          self.class.store(meta_id, data, expire_at)
           self
         end
 
