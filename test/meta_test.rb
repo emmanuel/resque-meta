@@ -63,7 +63,9 @@ class MetaTest < Test::Unit::TestCase
 
   def test_enqueued_metadata
     now = Time.now
-    meta = MetaJob.enqueue('foo', 'bar')
+    job_id = MetaJob.enqueue('foo', 'bar')
+    assert_not_nil job_id
+    meta = MetaJob.get_meta(job_id)
     assert_not_nil meta
     assert_not_nil meta.job_id
     assert_nil meta['foo']
@@ -72,56 +74,58 @@ class MetaTest < Test::Unit::TestCase
   end
 
   def test_processed_job
-    meta = MetaJob.enqueue('foo', 'bar')
+    job_id = MetaJob.enqueue('foo', 'bar')
+    meta = MetaJob.get_meta(job_id)
     assert_nil meta['foo']
     worker = Resque::Worker.new(:test)
     worker.work(0)
 
-    meta = MetaJob.get_meta(meta.job_id)
+    meta = MetaJob.get_meta(job_id)
     assert_equal MetaJob, meta.job_class
     assert_equal 'bar', meta['foo'], "'foo' not found in #{meta.inspect}"
   end
 
   def test_wrong_id_for_class
-    meta = MetaJob.enqueue('foo', 'bar')
+    job_id = MetaJob.enqueue('foo', 'bar')
 
-    assert_nil AnotherJob.get_meta(meta.job_id)
-    assert_not_nil Resque::Plugins::Meta.get_meta(meta.job_id)
-    assert_not_nil Resque::Plugins::Meta::Metadata.get(meta.job_id)
+    assert_nil AnotherJob.get_meta(job_id)
+    assert_not_nil Resque::Plugins::Meta.get_meta(job_id)
+    assert_not_nil Resque::Plugins::Meta::Metadata.get(job_id)
   end
 
   def test_expired_metadata
-    meta = MetaJob.enqueue('foo', 'bar')
+    job_id = MetaJob.enqueue('foo', 'bar')
     worker = Resque::Worker.new(:test)
     worker.work(0)
 
     sleep 2
-    reloaded = MetaJob.get_meta(meta.job_id)
-    assert_nil reloaded
+    assert_nil MetaJob.get_meta(job_id)
   end
 
   def test_slow_job
-    meta = SlowJob.enqueue('foo', 'bar')
+    job_id = SlowJob.enqueue('foo', 'bar')
     worker = Resque::Worker.new(:test)
     thread = Thread.new { worker.work(0) }
 
     sleep 0.1
-    meta = SlowJob.get_meta(meta.job_id)
+    meta = SlowJob.get_meta(job_id)
+    assert_not_nil meta
 
     thread.join # job should be done
     meta.reload!
 
     sleep 2 # metadata should be expired
-    assert_nil Resque::Plugins::Meta.get_meta(meta.job_id)
+    assert_nil Resque::Plugins::Meta.get_meta(job_id)
   end
 
   def test_saving_additional_metadata
-    meta = MetaJob.enqueue('stuff')
+    job_id = MetaJob.enqueue('stuff')
+    meta = MetaJob.get_meta(job_id)
     meta['foo'] = 'bar'
     meta.save
 
     # later
-    meta = MetaJob.get_meta(meta.job_id)
+    meta = MetaJob.get_meta(job_id)
     assert_equal 'bar', meta['foo']
   end
 end

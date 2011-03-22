@@ -59,7 +59,8 @@ class TimestampsTest < Test::Unit::TestCase
 
   def test_enqueued_metadata
     now = Time.now
-    meta = TimedJob.enqueue('foo', 'bar')
+    job_id = TimedJob.enqueue('foo', 'bar')
+    meta = TimedJob.get_meta(job_id)
     assert meta.enqueued_at.to_f > now.to_f, "#{meta.enqueued_at} should be after #{now}"
     assert meta.seconds_enqueued > 0.0, "seconds_enqueued should be greater than zero"
     assert meta.enqueued?
@@ -71,12 +72,13 @@ class TimestampsTest < Test::Unit::TestCase
   end
 
   def test_processed_job
-    meta = TimedJob.enqueue('foo', 'bar')
+    job_id = TimedJob.enqueue('foo', 'bar')
+    meta = TimedJob.get_meta(job_id)
     assert_nil meta['foo']
     worker = Resque::Worker.new(:timed)
     worker.work(0)
 
-    meta = TimedJob.get_meta(meta.job_id)
+    meta = TimedJob.get_meta(job_id)
     assert_equal TimedJob, meta.job_class
     assert meta.started?, 'Job should have started'
     assert meta.finished?, 'Job should be finished'
@@ -87,12 +89,12 @@ class TimestampsTest < Test::Unit::TestCase
   end
 
   def test_slow_job
-    meta = SlowTimedJob.enqueue('foo', 'bar')
+    job_id = SlowTimedJob.enqueue('foo', 'bar')
     worker = Resque::Worker.new(:timed)
     thread = Thread.new { worker.work(0) }
 
     sleep 0.2
-    meta = SlowTimedJob.get_meta(meta.job_id)
+    meta = SlowTimedJob.get_meta(job_id)
     assert !meta.enqueued?
     assert meta.started?
     assert meta.working?
@@ -108,11 +110,12 @@ class TimestampsTest < Test::Unit::TestCase
     assert !meta.failed?
 
     sleep 2
-    assert_nil Resque::Plugins::Meta.get_meta(meta.job_id)
+    assert_nil Resque::Plugins::Meta.get_meta(job_id)
   end
 
   def test_failing_job
-    meta = FailingTimedJob.enqueue()
+    job_id = FailingTimedJob.enqueue()
+    meta = FailingTimedJob.get_meta(job_id)
     assert_nil meta.failed?
     worker = Resque::Worker.new(:timed)
     worker.work(0)
