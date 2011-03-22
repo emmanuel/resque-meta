@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper'
+require File.expand_path('../test_helper', __FILE__)
 require 'resque-meta'
 
 class MetaJob
@@ -9,8 +9,8 @@ class MetaJob
     1
   end
 
-  def self.perform(meta_id, key, val)
-    meta = get_meta(meta_id)
+  def self.perform(job_id, key, val)
+    meta = get_meta(job_id)
     meta[key] = val
     meta.save
   end
@@ -20,7 +20,7 @@ class AnotherJob
   extend Resque::Plugins::Meta
   @queue = :test
 
-  def self.perform(meta_id)
+  def self.perform(job_id)
   end
 end
 
@@ -32,20 +32,11 @@ class SlowJob
     1
   end
 
-  def self.perform(meta_id, key, val)
-    meta = get_meta(meta_id)
+  def self.perform(job_id, key, val)
+    meta = get_meta(job_id)
     meta[key] = val
     meta.save
     sleep 1
-  end
-end
-
-class FailingJob
-  extend Resque::Plugins::Meta
-  @queue = :test
-
-  def self.perform(*args)
-    raise 'boom'
   end
 end
 
@@ -74,13 +65,7 @@ class MetaTest < Test::Unit::TestCase
     now = Time.now
     meta = MetaJob.enqueue('foo', 'bar')
     assert_not_nil meta
-    assert_not_nil meta.meta_id
-    assert meta.enqueued_at.to_f > now.to_f, "#{meta.enqueued_at} should be after #{now}"
-    assert meta.seconds_enqueued > 0.0, "seconds_enqueued should be greater than zero"
-    assert meta.enqueued?
-    assert !meta.started?
-    assert_equal 0, meta.seconds_processing
-    assert !meta.finished?
+    assert_not_nil meta.job_id
     assert_nil meta['foo']
     assert_equal Resque::Plugins::Meta::Metadata, meta.class
     assert_equal MetaJob, meta.job_class
@@ -92,23 +77,17 @@ class MetaTest < Test::Unit::TestCase
     worker = Resque::Worker.new(:test)
     worker.work(0)
 
-    meta = MetaJob.get_meta(meta.meta_id)
+    meta = MetaJob.get_meta(meta.job_id)
     assert_equal MetaJob, meta.job_class
-    assert meta.started?
-    assert meta.finished?, 'Job should be finished'
-    assert meta.succeeded?, 'Job should have succeeded'
-    assert !meta.enqueued?
-    assert meta.seconds_enqueued > 0.0, "seconds_enqueued should be greater than zero"
-    assert meta.seconds_processing > 0.0, "seconds_processing should be greater than zero"
     assert_equal 'bar', meta['foo'], "'foo' not found in #{meta.inspect}"
   end
 
   def test_wrong_id_for_class
     meta = MetaJob.enqueue('foo', 'bar')
 
-    assert_nil AnotherJob.get_meta(meta.meta_id)
-    assert_not_nil Resque::Plugins::Meta.get_meta(meta.meta_id)
-    assert_not_nil Resque::Plugins::Meta::Metadata.get(meta.meta_id)
+    assert_nil AnotherJob.get_meta(meta.job_id)
+    assert_not_nil Resque::Plugins::Meta.get_meta(meta.job_id)
+    assert_not_nil Resque::Plugins::Meta::Metadata.get(meta.job_id)
   end
 
   def test_expired_metadata
@@ -117,8 +96,8 @@ class MetaTest < Test::Unit::TestCase
     worker.work(0)
 
     sleep 2
-    meta = MetaJob.get_meta(meta.meta_id)
-    assert_nil meta
+    reloaded = MetaJob.get_meta(meta.job_id)
+    assert_nil reloaded
   end
 
   def test_slow_job
@@ -127,35 +106,13 @@ class MetaTest < Test::Unit::TestCase
     thread = Thread.new { worker.work(0) }
 
     sleep 0.1
-    meta = SlowJob.get_meta(meta.meta_id)
-    assert !meta.enqueued?
-    assert meta.started?
-    assert meta.working?
-    assert !meta.finished?
+    meta = SlowJob.get_meta(meta.job_id)
 
     thread.join # job should be done
     meta.reload!
-    assert !meta.enqueued?
-    assert meta.started?
-    assert !meta.working?
-    assert meta.finished?
-    assert meta.succeeded?
-    assert !meta.failed?
 
-    sleep 2
-    assert_nil Resque::Plugins::Meta.get_meta(meta.meta_id)
-  end
-
-  def test_failing_job
-    meta = FailingJob.enqueue()
-    assert_nil meta.failed?
-    worker = Resque::Worker.new(:test)
-    worker.work(0)
-
-    meta.reload!
-    assert meta.finished?
-    assert meta.failed?
-    assert !meta.succeeded?
+    sleep 2 # metadata should be expired
+    assert_nil Resque::Plugins::Meta.get_meta(meta.job_id)
   end
 
   def test_saving_additional_metadata
@@ -164,7 +121,7 @@ class MetaTest < Test::Unit::TestCase
     meta.save
 
     # later
-    meta = MetaJob.get_meta(meta.meta_id)
+    meta = MetaJob.get_meta(meta.job_id)
     assert_equal 'bar', meta['foo']
   end
 end
