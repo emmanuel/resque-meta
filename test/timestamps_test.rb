@@ -115,11 +115,9 @@ class TimestampsTest < Test::Unit::TestCase
     meta = FailingTimedJob.enqueue()
     assert_nil meta.failed?
     worker = Resque::Worker.new(:timed)
-    # debugger
     worker.work(0)
 
     sleep 0.5
-    # debugger
     meta.reload!
     assert meta.finished?
     assert meta.failed?
