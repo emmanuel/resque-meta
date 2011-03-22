@@ -56,8 +56,6 @@ module Resque
       end
 
       module Metadata
-        attr_accessor :enqueued_at
-
         def enqueued!
           @enqueued_at = Time.now
           self['enqueued_at'] = to_time_format_str(@enqueued_at)
