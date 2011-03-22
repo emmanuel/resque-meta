@@ -1,8 +1,7 @@
-require 'digest/sha1'
 require 'resque'
+require 'resque/plugins/job_identity'
 require 'resque/plugins/meta/version'
 require 'resque/plugins/meta/metadata'
-require 'resque/plugins/timestamps'
 
 module Resque
   module Plugins
@@ -16,48 +15,42 @@ module Resque
     #     class MyJob
     #       extend Resque::Plugins::Meta
     #
-    #       def self.perform(meta_id, *args)
+    #       def self.perform(job_id, *args)
     #         heavy_lifting
     #       end
     #     end
     #
     #     meta0 = MyJob.enqueue('stuff')
-    #     meta0.enqueued_at # => 'Wed May 19 13:42:41 -0600 2010'
-    #     meta0.meta_id # => '03c9e1a045ad012dd20500264a19273c'
+    #     meta0.job_id # => '03c9e1a045ad012dd20500264a19273c'
     #     meta0['foo'] = 'bar' # => 'bar'
     #     meta0.save
     #
     #     # later
     #     meta1 = MyJob.get_meta('03c9e1a045ad012dd20500264a19273c')
     #     meta1.job_class # => MyJob
-    #     meta1.enqueued_at # => 'Wed May 19 13:42:41 -0600 2010'
     #     meta1['foo'] # => 'bar'
     module Meta
-      # drop this extend and allow users to opt-in for timestamps
-      extend Timestamps
+      include JobIdentity
 
-      # Override in your job to control the metadata id. It is
-      # passed the same arguments as `perform`, that is, your job's
-      # payload.
-      def meta_id(*args)
-        Digest::SHA1.hexdigest([ Time.now.to_f, rand, self, args ].join)
+      # Enqueues a job in Resque and return the association metadata.
+      # The job_id in the returned object can be used to fetch the
+      # metadata again in the future.
+      def enqueue(*args)
+        metadata = nil
+        # need to save the metadata before queueing the job, hence the block
+        super do |job_id|
+          metadata = Metadata.new(job_id, self)
+          metadata.save
+        end
+        # metadata is updated by the after_enqueue hook
+        metadata.reload!
       end
 
-      # Override in your job to control the how many seconds a job's
+      # Override in your job to control the many seconds a job's
       # metadata will live after it finishes.  Defaults to 24 hours.
       # Return nil or 0 to set them to never expire.
       def expire_meta_in
         24 * 60 * 60
-      end
-
-      # Enqueues a job in Resque and return the association metadata.
-      # The meta_id in the returned object can be used to fetch the
-      # metadata again in the future.
-      def enqueue(*args)
-        meta = Metadata.new('meta_id' => meta_id(args), 'job_class' => self.to_s)
-        meta.save
-        Resque.enqueue(self, meta.meta_id, *args)
-        meta
       end
 
       def get_meta(meta_id)
