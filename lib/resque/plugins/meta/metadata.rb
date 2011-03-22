@@ -67,11 +67,16 @@ module Resque
         end
 
         # methods in modules can be easily overridden or extended later (with more modules)
-        include module InstanceMethods
+        module OverridableMethods
           def expire_at
-            Time.now.to_i + expire_in
+            if @expire_in && 0 < @expire_in
+              Time.now.to_i + @expire_in
+            else
+              0
+            end
           end
         end
+        include OverridableMethods
 
       protected
 
