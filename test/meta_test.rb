@@ -36,7 +36,7 @@ class SlowJob
     meta = get_meta(job_id)
     meta[key] = val
     meta.save
-    sleep 1
+    sleep 0.5
   end
 end
 

@@ -33,7 +33,7 @@ class TimestampsTest < Test::Unit::TestCase
       meta = get_meta(job_id)
       meta[key] = val
       meta.save
-      sleep 1
+      sleep 0.5
     end
   end
 
@@ -91,7 +91,7 @@ class TimestampsTest < Test::Unit::TestCase
     worker = Resque::Worker.new(:timed)
     thread = Thread.new { worker.work(0) }
 
-    sleep 0.1
+    sleep 0.2
     meta = SlowTimedJob.get_meta(meta.job_id)
     assert !meta.enqueued?
     assert meta.started?
