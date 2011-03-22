@@ -20,30 +20,24 @@ module Resque
     #       end
     #     end
     #
-    #     meta0 = MyJob.enqueue('stuff')
-    #     meta0.job_id # => '03c9e1a045ad012dd20500264a19273c'
-    #     meta0['foo'] = 'bar' # => 'bar'
-    #     meta0.save
+    #     job_id = MyJob.enqueue('stuff') # => '03c9e1a045ad012dd20500264a19273c'
+    #     meta0 = MyJob.get_meta(job_id)
+    #     meta0.job_id          # => '03c9e1a045ad012dd20500264a19273c'
+    #     meta0['foo'] = 'bar'  # => 'bar'
+    #     meta0.save            # => meta0
     #
     #     # later
     #     meta1 = MyJob.get_meta('03c9e1a045ad012dd20500264a19273c')
-    #     meta1.job_class # => MyJob
-    #     meta1['foo'] # => 'bar'
+    #     meta1.job_class       # => MyJob
+    #     meta1['foo']          # => 'bar'
     module Meta
       include JobIdentity
 
-      # Enqueues a job in Resque and return the association metadata.
+      # Enqueues a job in Resque and return the associated metadata.
       # The job_id in the returned object can be used to fetch the
       # metadata again in the future.
-      def enqueue(*args)
-        metadata = nil
-        # need to save the metadata before queueing the job, hence the block
-        super do |job_id|
-          metadata = Metadata.new(job_id, self)
-          metadata.save
-        end
-        # metadata is updated by the after_enqueue hook
-        metadata.reload!
+      def before_enqueue_create_metadata(job_id, *args)
+        Metadata.new(job_id, self).save
       end
 
     module_function

@@ -1,13 +1,24 @@
 require 'digest/sha1'
 
 module Resque
+  module Plugin
+    def before_enqueue_hooks(job)
+      job.methods.grep(/^before_enqueue/).sort
+    end
+  end
+
   module Plugins
     module JobIdentity
       # Enqueue a job in Resque and return the associated job_id.
       # The returned job_id can be used to refer to the job in the future.
+      # prepends enqueued job_id to args
       def enqueue(*args)
         job_id = job_id(args)
-        yield(job_id) if block_given?
+        before_enqueue_hooks = Resque::Plugin.before_enqueue_hooks(self)
+        before_enqueue_hooks.each do |hook|
+          send(hook, job_id, *args)
+        end
+
         Resque.enqueue(self, job_id, *args)
         job_id
       end

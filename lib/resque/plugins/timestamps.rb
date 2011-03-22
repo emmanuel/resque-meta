@@ -17,7 +17,8 @@ module Resque
     #       end
     #     end
     #
-    #     meta0 = MyJob.enqueue('stuff')
+    #     job_id = MyJob.enqueue('stuff')
+    #     meta0 = MyJob.get_meta(job_id)
     #     meta0.job_id        # => '03c9e1a045ad012dd20500264a19273c'
     #     meta0.enqueued_at   # => 'Wed May 19 13:42:41 -0600 2010'
     #     meta0.started_at    # => nil
