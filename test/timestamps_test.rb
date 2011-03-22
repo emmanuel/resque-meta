@@ -1,5 +1,5 @@
 require File.expand_path('../test_helper', __FILE__)
-require 'resque-meta'
+require 'resque-timestamps'
 
 class TimestampsTest < Test::Unit::TestCase
   class TimedJob
@@ -84,16 +84,6 @@ class TimestampsTest < Test::Unit::TestCase
     assert !meta.enqueued?, 'Job should have been removed from the queue'
     assert meta.seconds_enqueued > 0.0, "seconds_enqueued should be greater than zero"
     assert meta.seconds_processing > 0.0, "seconds_processing should be greater than zero"
-  end
-
-  def test_expired_metadata
-    meta = MetaJob.enqueue('foo', 'bar')
-    worker = Resque::Worker.new(:timed)
-    worker.work(0)
-
-    sleep 2
-    meta = MetaJob.get_meta(meta.job_id)
-    assert_nil meta
   end
 
   def test_slow_job
