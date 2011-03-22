@@ -40,19 +40,17 @@ module Resque
         Metadata.new(job_id, self).save
       end
 
-    module_function
-
       # Override in your job to control the many seconds a job's
       # metadata will live after it finishes.  Defaults to 24 hours.
       # Return nil or 0 to set them to never expire.
       def expire_meta_in
         24 * 60 * 60
       end
-      public :expire_meta_in
 
       def get_meta(job_id)
         Metadata.get(job_id, self)
       end
+      module_function :get_meta
       public :get_meta
 
     end
