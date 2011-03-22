@@ -1,5 +1,5 @@
-dir = File.dirname(File.expand_path(__FILE__))
-$LOAD_PATH.unshift dir + '/../lib'
+test_dir = File.dirname(__FILE__)
+$LOAD_PATH << File.expand_path('../lib', test_dir)
 require 'test/unit'
 require 'rubygems'
 require 'resque'
@@ -27,11 +27,11 @@ at_exit do
 
   pid = `ps -A -o pid,command | grep [r]edis-test`.split(" ")[0]
   puts "Killing test redis server[#{pid}]..."
-  `rm -f #{dir}/dump.rdb`
+  `rm -f #{test_dir}/dump.rdb`
   Process.kill("KILL", pid.to_i)
   exit exit_code
 end
 
 puts "Starting redis for testing at localhost:9736..."
-`redis-server #{dir}/redis-test.conf`
+`redis-server #{test_dir}/redis-test.conf`
 Resque.redis = 'localhost:9736'
