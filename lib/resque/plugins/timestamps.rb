@@ -56,51 +56,6 @@ module Resque
       end
 
       module MetadataExtensions
-        def enqueued!
-          self.enqueued_at = Time.now
-          save
-        end
-
-        def enqueued_at=(time)
-          set_timestamp(:enqueued_at, time)
-        end
-
-        def enqueued_at
-          @enqueued_at ||= get_timestamp(:enqueued_at)
-        end
-
-        def started!
-          self.started_at = Time.now
-          save
-        end
-
-        def started_at=(time)
-          set_timestamp(:started_at, time)
-        end
-
-        def started_at
-          @started_at ||= get_timestamp(:started_at)
-        end
-
-        def finished!
-          self[:succeeded] = true unless include?(:succeeded)
-          self.finished_at = Time.now
-          save
-        end
-
-        def finished_at=(time)
-          set_timestamp(:finished_at, time)
-        end
-
-        def finished_at
-          @finished_at ||= get_timestamp(:finished_at)
-        end
-
-        def failed!
-          self[:succeeded] = false
-          finished!
-        end
-
         def enqueued?
           !started?
         end
@@ -125,12 +80,49 @@ module Resque
           finished? ? !self[:succeeded] : nil
         end
 
-        def expire_at
-          if finished? && @expire_in > 0
-            finished_at.to_i + @expire_in
-          else
-            super
-          end
+        def enqueued!
+          self.enqueued_at = Time.now
+          save
+        end
+
+        def started!
+          self.started_at = Time.now
+          save
+        end
+
+        def finished!
+          self[:succeeded] = true unless include?(:succeeded)
+          self.finished_at = Time.now
+          save
+        end
+
+        def failed!
+          self[:succeeded] = false
+          finished!
+        end
+
+        def enqueued_at
+          @enqueued_at ||= get_timestamp(:enqueued_at)
+        end
+
+        def started_at
+          @started_at ||= get_timestamp(:started_at)
+        end
+
+        def finished_at
+          @finished_at ||= get_timestamp(:finished_at)
+        end
+
+        def enqueued_at=(time)
+          set_timestamp(:enqueued_at, time)
+        end
+
+        def started_at=(time)
+          set_timestamp(:started_at, time)
+        end
+
+        def finished_at=(time)
+          set_timestamp(:finished_at, time)
         end
 
         def seconds_enqueued
@@ -142,6 +134,15 @@ module Resque
             (finished_at || Time.now).to_f - started_at.to_f
           else
             0
+          end
+        end
+
+        # override default implementation to base expiry on finish time
+        def expire_at
+          if finished? && @expire_in > 0
+            finished_at.to_i + @expire_in
+          else
+            super
           end
         end
 
