@@ -83,7 +83,7 @@ module Resque
         end
 
         def finished!
-          data['succeeded'] = true unless data.has_key?('succeeded')
+          self[:succeeded] = true unless include?(:succeeded)
           self.finished_at = Time.now
           save
         end
@@ -97,7 +97,7 @@ module Resque
         end
 
         def failed!
-          self['succeeded'] = false
+          self[:succeeded] = false
           finished!
         end
 
@@ -118,11 +118,11 @@ module Resque
         end
 
         def succeeded?
-          finished? ? self['succeeded'] : nil
+          finished? ? self[:succeeded] : nil
         end
 
         def failed?
-          finished? ? !self['succeeded'] : nil
+          finished? ? !self[:succeeded] : nil
         end
 
         def expire_at
