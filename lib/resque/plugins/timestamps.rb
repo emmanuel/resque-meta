@@ -36,7 +36,7 @@ module Resque
       include Meta
 
       def self.extended(base)
-        Resque::Plugins::Meta::Metadata.send(:include, Resque::Plugins::Timestamps::Metadata)
+        Meta::Metadata.send(:include, Timestamps::MetadataExtensions)
       end
 
       def after_enqueue_timestamp(job_id, *args)
@@ -55,7 +55,7 @@ module Resque
         meta = get_meta(job_id) and meta.failed!
       end
 
-      module Metadata
+      module MetadataExtensions
         def enqueued!
           self.enqueued_at = Time.now
           save
@@ -156,7 +156,7 @@ module Resque
           self[name] = time.utc.iso8601(6)
         end
 
-      end # module Metadata
+      end # module MetadataExtensions
     end # module Timestamps
   end # module Plugins
 end # module Resque
