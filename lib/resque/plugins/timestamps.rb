@@ -24,12 +24,12 @@ module Resque
     #     meta0.started_at    # => nil
     #
     #     # later
-    #     meta1 = MyJob.get_meta('03c9e1a045ad012dd20500264a19273c')
+    #     meta1 = MyJob.get_meta(job_id)
     #     meta1.enqueued_at   # => 'Wed May 19 13:42:41 -0600 2010'
     #     meta1.started_at    # => 'Wed May 19 13:42:51 -0600 2010'
     #
     #     # later still
-    #     meta2 = MyJob.get_meta('03c9e1a045ad012dd20500264a19273c')
+    #     meta2 = MyJob.get_meta(job_id)
     #     meta2.started_at    # => 'Wed May 19 13:42:51 -0600 2010'
     #     meta2.finished_at   # => 'Wed May 19 13:43:01 -0600 2010'
     module Timestamps
