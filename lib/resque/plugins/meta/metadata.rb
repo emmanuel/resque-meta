@@ -8,12 +8,6 @@ module Resque
 
         attr_reader :job_id, :job_class, :data, :expire_in
 
-        def self.store(job_id, data, expire_at)
-          key = "meta:#{job_id}"
-          redis.set(key, encode(data))
-          redis.expireat("resque:#{key}", expire_at) if expire_at > 0
-        end
-
         # Retrieve the metadata for a given job.  If you call this
         # from a class that extends Meta, then the metadata will
         # only be returned if the metadata for that id is for the
@@ -23,6 +17,12 @@ module Resque
           if data = load(job_id, job_class)
             Metadata.new(job_id, data["job_class"], data)
           end
+        end
+
+        def self.store(job_id, data, expire_at)
+          key = "meta:#{job_id}"
+          redis.set(key, encode(data))
+          redis.expireat("resque:#{key}", expire_at) if expire_at > 0
         end
 
         def self.load(job_id, job_class = nil)
