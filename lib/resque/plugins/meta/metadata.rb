@@ -59,11 +59,15 @@ module Resque
         end
 
         def [](key)
-          data[key]
+          data[key.to_s]
         end
 
         def []=(key, val)
           data[key.to_s] = val
+        end
+
+        def include?(key)
+          data.include?(key.to_s)
         end
 
         # methods in modules can be easily overridden or extended later (with more modules)
