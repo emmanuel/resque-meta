@@ -57,9 +57,12 @@ module Resque
 
       module Metadata
         def enqueued!
-          @enqueued_at = Time.now
-          self['enqueued_at'] = to_time_format_str(@enqueued_at)
+          self.enqueued_at = Time.now
           save
+        end
+
+        def enqueued_at=(time)
+          set_timestamp(:enqueued_at, time)
         end
 
         def enqueued_at
@@ -67,9 +70,12 @@ module Resque
         end
 
         def started!
-          @started_at = Time.now
-          self['started_at'] = to_time_format_str(@started_at)
+          self.started_at = Time.now
           save
+        end
+
+        def started_at=(time)
+          set_timestamp(:started_at, time)
         end
 
         def started_at
@@ -78,9 +84,12 @@ module Resque
 
         def finished!
           data['succeeded'] = true unless data.has_key?('succeeded')
-          @finished_at = Time.now
-          self['finished_at'] = to_time_format_str(@finished_at)
+          self.finished_at = Time.now
           save
+        end
+
+        def finished_at=(time)
+          set_timestamp(:finished_at, time)
         end
 
         def finished_at
@@ -140,6 +149,11 @@ module Resque
 
         def get_timestamp(name)
           time_string = self[name] and Time.parse(time_string)
+        end
+
+        def set_timestamp(name, time)
+          self.instance_variable_set("@#{name}", time)
+          self[name] = time.utc.iso8601(6)
         end
 
       end # module Metadata

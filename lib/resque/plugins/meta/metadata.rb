@@ -82,12 +82,6 @@ module Resque
         end
         include OverridableMethods
 
-      protected
-
-        def to_time_format_str(time)
-          time.utc.iso8601(6)
-        end
-
       end # class Metadata
     end # module Meta
   end # module Plugins
