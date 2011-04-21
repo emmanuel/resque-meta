@@ -92,7 +92,7 @@ module Resque
           time.utc.iso8601(6)
         end
 
-      end
-    end
-  end
-end
+      end # class Metadata
+    end # module Meta
+  end # module Plugins
+end # module Resque

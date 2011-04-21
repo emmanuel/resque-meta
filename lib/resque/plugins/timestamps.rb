@@ -135,8 +135,8 @@ module Resque
             0
           end
         end
-      end
+      end # module Metadata
 
-    end
-  end
-end
+    end # module Timestamps
+  end # module Plugins
+end # module Resque
