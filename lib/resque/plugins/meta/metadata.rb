@@ -84,10 +84,6 @@ module Resque
 
       protected
 
-        def from_time_format_str(key)
-          (t = self[key]) && Time.parse(t)
-        end
-
         def to_time_format_str(time)
           time.utc.iso8601(6)
         end

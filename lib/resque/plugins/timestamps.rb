@@ -63,7 +63,7 @@ module Resque
         end
 
         def enqueued_at
-          @enqueued_at ||= from_time_format_str('enqueued_at')
+          @enqueued_at ||= get_timestamp(:enqueued_at)
         end
 
         def started!
@@ -73,7 +73,7 @@ module Resque
         end
 
         def started_at
-          @started_at ||= from_time_format_str('started_at')
+          @started_at ||= get_timestamp(:started_at)
         end
 
         def finished!
@@ -84,7 +84,7 @@ module Resque
         end
 
         def finished_at
-          @finished_at ||= from_time_format_str('finished_at')
+          @finished_at ||= get_timestamp(:finished_at)
         end
 
         def failed!
@@ -135,8 +135,14 @@ module Resque
             0
           end
         end
-      end # module Metadata
 
+      private
+
+        def get_timestamp(name)
+          time_string = self[name] and Time.parse(time_string)
+        end
+
+      end # module Metadata
     end # module Timestamps
   end # module Plugins
 end # module Resque
